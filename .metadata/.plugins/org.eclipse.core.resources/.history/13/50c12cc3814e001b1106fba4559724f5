@@ -1,0 +1,212 @@
+package academia;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+import com.matisse.MtDatabase;
+import com.matisse.MtException;
+import com.matisse.MtObjectIterator;
+import com.matisse.MtPackageObjectFactory;
+
+public class Main {
+	
+	// Método para Crear objetos en la base de datos
+		public static void creaObjetos(String hostname, String dbname) {
+			try {
+				// Abre la BD con el Hostname (localhost), dbname (biblioteca) y el namespace "biblioteca"
+				MtDatabase db = new MtDatabase(hostname, dbname, new MtPackageObjectFactory("", "academia"));
+				db.open();
+				db.startTransaction();
+				System.out.println("Conectando a la base de datos " + db.toString() + " de Matisse.");
+
+				// Crea un objeto Profesor
+				Profesores a1 = new Profesores(db);
+				a1.setNombre("Rodolfo");
+				a1.setApellidos("Ramos Araujo");
+				a1.setTelefono(630170239);
+				a1.setDni("28547789D");
+				System.out.println("Profesor "+a1.getNombre()+" "+a1.getApellidos()+" creado.");
+
+				// Crea un objeto Cursos
+				Cursos l1 = new Cursos(db);
+				l1.setNombre("Acceso a Datos");
+				l1.setAula("Uno");
+				l1.setDuracion(50);
+				l1.setHoraInicio(11);
+				l1.setFecha("2020/10/10");
+				System.out.println("Curso 'Acceso a Datos' creado satisfactoriamente.");
+
+				// Crea un objeto Cursos
+				Cursos l2 = new Cursos(db);
+				l2.setNombre("Desarrollo de Interfaces");
+				l2.setAula("Dos");
+				l2.setDuracion(50);
+				l2.setHoraInicio(12);
+				l2.setFecha("2020/10/10");
+				System.out.println("Curso 'Desarrollo de Interfaces' creado satisfactoriamente.");
+
+
+				// Crea un objeto Cursos
+				Cursos l3 = new Cursos(db);
+				l3.setNombre("Sistemas de Gestión Empresarial");
+				l3.setAula("Tres");
+				l3.setDuracion(50);
+				l3.setHoraInicio(13);
+				l3.setFecha("2020/10/10");
+				System.out.println("Curso 'Sistemas de Gestión Empresarial' creado satisfactoriamente.");
+
+				// Crea un objeto Cursos
+				Cursos l4 = new Cursos(db);
+				l4.setNombre("Programación de Servicios y Procesos");
+				l4.setAula("Uno");
+				l4.setDuracion(50);
+				l4.setHoraInicio(16);
+				l4.setFecha("2020/10/10");
+				System.out.println("Curso 'Programación de Servicios y Procesos' creado satisfactoriamente.");
+				
+				// Crea un objeto Cursos
+				Cursos l5 = new Cursos(db);
+				l5.setNombre("Programación Multimedia y Dispositivos Móviles");
+				l5.setAula("Dos");
+				l5.setDuracion(50);
+				l5.setHoraInicio(17);
+				l5.setFecha("2020/10/10");
+				System.out.println("Curso 'Programación Multimedia y Dispositivos Móviles' creado satisfactoriamente.");
+
+				// Crea un array de Obras para guardar los libros y hacer las relaciones
+				Cursos c1[] = new Cursos[5];
+				c1[0] = l1;
+				c1[1] = l2;
+				c1[2] = l3;
+				c1[3] = l4;
+				c1[4] = l5;
+
+				// Guarda las relaciones del autor con los libros que ha escrito
+				a1.setImparten(c1);
+
+				// Ejecuta un commit para materializar las peticiones
+				db.commit();
+
+				// Cierra la base de datos
+				db.close();
+
+				System.out.println("\nRealizado.");
+			} catch(MtException mte) {
+				System.out.println("MtException: "+ mte.getMessage());
+			}
+		}
+
+		// Método para realizar una Consulta en la base de datos
+		public static void ejecutaOQL(String hostname, String dbname) {
+			MtDatabase dbcon = new MtDatabase(hostname, dbname);
+			// Abre una conexión a la base de datos
+			dbcon.open();
+			try {
+				// Crea una instancia de Statement
+				Statement stmt = dbcon.createStatement();
+
+				// Asigna una consulta OQL. Esta consulta lo que hace es utilizar REF() para obtener el objeto directamente en vez de obtener valores concretos
+				String commandText = "SELECT REF(a) from academia.Profesores a;";
+
+				// Ejecuta la consulta y obtines un ResultSet
+				ResultSet rset = stmt.executeQuery(commandText);
+				Profesores a1;
+
+				// Lee rset uno a uno
+				while (rset.next()) {
+					// Obtiene los objetos Autor
+					a1 = (Profesores) rset.getObject(1);
+					
+					// Imprime los atributos de cada objeto con un formato determinado
+					System.out.println("Profesor: " + String.format("%16s",  a1.getNombre()) + String.format("%10s",  a1.getApellidos()) + "    Telefono: " + String.format("%10s", a1.getTelefono()) +"    DNI: " + String.format("%10s", a1.getDni()));
+				}
+				// Cierra las conexiones
+				rset.close();
+				stmt.close();
+			} catch (SQLException e) {
+				System.out.println("SQLException: " + e.getMessage());
+			}
+		}
+
+		// Método para modificar objetos en la base de datos
+		public static void modificaObjetos(String hostname, String dbname, String nombre, String nuevoApellido, Integer nuevoTelefono, String nuevoDni) {
+			System.out.println("=================== MODIFICA UN OBJETO ==================\n");
+			int nProfesores = 0;
+			try {
+				// Abre la BD con el Hostname (localhost), dbname (biblioteca) y el namespace "biblioteca"
+				MtDatabase db = new MtDatabase(hostname, dbname, new MtPackageObjectFactory("", "academia"));
+				db.open();
+				db.startTransaction();
+
+				// Lista cuántos objetos Autor con el método getInstanceNumber
+				System.out.println("\n" + Profesores.getInstanceNumber(db) + " Profesores en la base de datos.");
+				nProfesores = (int) Profesores.getInstanceNumber(db);
+
+				// Crea un Iterador (propio de Java)
+				MtObjectIterator<Profesores> iter = Profesores.<Profesores>instanceIterator(db);
+				System.out.println("Recorro el iterador de uno en uno y cambio cuando encuentro 'nombre'");
+				while (iter.hasNext()) {
+					Profesores[] profesores = iter.next(nProfesores);
+					for (int i = 0; i <profesores.length; i++) {
+						//Busca un autor con nombre 'nombre'
+						if (profesores[i].getNombre().compareTo(nombre) == 0) 
+						{
+							profesores[i].setApellidos(nuevoApellido);
+							profesores[i].setTelefono(nuevoTelefono);
+							profesores[i].setDni(nuevoDni);
+						} 
+						else 
+						{
+						}
+					}
+				}
+				iter.close();
+				// Materializa los cambios y cierra la base de datos
+				db.commit();
+				db.close();
+
+				System.out.println("\nRealizado.");
+			} 
+			catch(MtException mte)
+			{
+				System.out.println("MtException: " + mte.getMessage());
+			}
+		}
+
+		// Método para Eliminar objetos en la base de datos
+		public static void borrarTodos(String hostname, String dbname) {
+			System.out.println("===================== BORRAR TODOS ======================\n");
+			try {
+				// Abre la BD con el Hostname (localhost), dbname (biblioteca) y el namespace "biblioteca"
+				MtDatabase db = new MtDatabase(hostname, dbname, new MtPackageObjectFactory("", "academia"));
+				db.open();
+				db.startTransaction();
+
+				// Lista todos los objetos Obra que hay en la base de datos con el método getInstanceNumber
+				System.out.println("\n" + Cursos.getInstanceNumber(db) + "Curso(s) en la base de datos.");
+
+				// BORRA todas las instancias de Obra
+				Cursos.getClass(db).removeAllInstances();
+
+				// Materializa los cambios y cierra la BD
+				db.commit();
+				db.close();
+
+				System.out.println("\nRealizado.");
+			} catch(MtException mte) {
+				System.out.println("MtException : " + mte.getMessage());
+			}
+		}
+
+		static String hostname = "localhost";
+		static String dbname = "academia";
+
+		public static void main(String[] args) {
+			creaObjetos(hostname, dbname);
+			borrarTodos(hostname, dbname);
+			modificaObjetos(hostname, dbname, "Rodolfo", "Pineda Tomares", 620345345, "30258789Z");
+			ejecutaOQL(hostname, dbname);
+		}
+
+}
